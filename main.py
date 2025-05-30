@@ -368,7 +368,15 @@ async def choose(message:types.Message):
                 data = cursor.fetchone()
                 phone_number, address, user_name = data[0], data[1], data[2]
                 msg = f"Заказ №{i}\nВремя: {time}\n\nЗаказчик: {user_name}\nНомер телефона: +{phone_number}\nАдрес: {address}\nСодержимое заказа:\n{cart}"
-                await bot.send_message(message.chat.id, msg)
+                yandex_maps_url = f"https://yandex.ru/maps/?text={address}"
+                google_maps_url = f"https://www.google.com/maps/search/?api=1&query={address}"
+                twogis_url = f"https://2gis.ru/search?query={address}"
+                map_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Яндекс.Карты", url=yandex_maps_url),
+                InlineKeyboardButton(text="Google Maps", url=google_maps_url),
+                InlineKeyboardButton(text="2ГИС", url=twogis_url)]
+                ])
+                await bot.send_message(message.chat.id, msg, reply_markup=map_keyboard)
 
 
 
