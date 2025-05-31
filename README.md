@@ -25,7 +25,7 @@
 ## 🛠 Технологии
 
 - Python 3.9+
-- Aiogram (Telegram Bot API)
+- Aiogram 2.25.1 (Telegram Bot API)
 - SQLite (база данных)
 - FSM (Finite State Machine)
 
