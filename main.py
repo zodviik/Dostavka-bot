@@ -5,17 +5,45 @@ from aiogram.utils import executor
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from datetime import datetime
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from keybords import *
 
 
-storage = MemoryStorage()
-bot = Bot(config.token)
-dp = Dispatcher(bot, storage=storage)
 connect = sqlite3.connect('courier_db.sqlite')
 cursor = connect.cursor()
 
-admin_id = [825885613]
+admin_id = [825885613, 458534902, 658649677, 253848812]
+
+bot = Bot(config.token)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
+
+tz = ZoneInfo("Europe/Moscow")
+
+async def orders_autoclear():
+    while True:
+        cursor.execute(f"SELECT COUNT(*) FROM courier")
+        count_orders = cursor.fetchone()[0]
+        datetime_format = "%Y-%m-%d %H:%M:%S"
+        if count_orders >= 1:
+            for i in range(1, 1000):
+                try:    
+                    cursor.execute(f"SELECT datetime FROM courier WHERE order_id = {i}")
+                    time = str(cursor.fetchone())[2:-3]
+                    order_time = datetime.strptime(time, datetime_format)
+                    current_time = datetime.now(tz).strftime(datetime_format)
+                    current_time = datetime.strptime(current_time, datetime_format)
+                    if order_time + timedelta(hours=6) < current_time:
+                        cursor.execute(f"DELETE FROM courier WHERE order_id = {i}")
+                        connect.commit()
+                except ValueError as e:
+                    pass
+        await asyncio.sleep(300)
+
+async def on_startup(dp):
+    asyncio.create_task(orders_autoclear())
+
 
 class Logika(StatesGroup):
     role = State()
@@ -379,5 +407,4 @@ async def choose(message:types.Message):
                 await bot.send_message(message.chat.id, msg, reply_markup=map_keyboard)
 
 
-
-executor.start_polling(dp)
+executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
